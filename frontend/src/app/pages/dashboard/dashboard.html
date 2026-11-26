@@ -1,0 +1,145 @@
+<header class="page-head">
+  <div>
+    <h1>Resumen de {{ label() }}</h1>
+  </div>
+  <div class="page-head__actions">
+    <app-month-picker [value]="period()" (change)="setPeriod($event)" />
+    <button type="button" class="btn btn-primary" (click)="formOpen.set(true)">Registrar movimiento</button>
+  </div>
+</header>
+
+@if (error()) {
+  <p class="alert" role="alert">{{ error() }}</p>
+}
+
+@if (summary(); as s) {
+  <section class="ledger" [class.is-loading]="loading()" aria-labelledby="ledger-title">
+    <h2 id="ledger-title" class="visually-hidden">Balance del mes</h2>
+    <div class="ledger__figures">
+      <div>
+        <span class="ledger__label">Entró</span>
+        <span class="ledger__value pos">{{ s.totalIncome | cop }}</span>
+      </div>
+      <div>
+        <span class="ledger__label">Salió</span>
+        <span class="ledger__value neg">{{ s.totalExpense | cop }}</span>
+      </div>
+      <div class="ledger__balance">
+        <span class="ledger__label">{{ s.balance >= 0 ? 'Te quedó' : 'Te faltó' }}</span>
+        <span class="ledger__value ledger__value--xl" [class.neg]="s.balance < 0">{{ s.balance | cop }}</span>
+      </div>
+    </div>
+
+    @if (strip(); as st) {
+      @if (st.empty) {
+        <p class="ledger__empty">Todavía no hay movimientos este mes. Registra tu primer ingreso o gasto para ver el balance.</p>
+      } @else {
+        <div class="strip" role="img"
+             [attr.aria-label]="'Gastaste el ' + st.spentPct.toFixed(0) + '% de lo que entró'">
+          <div class="strip__spent" [style.width.%]="st.spentPct"></div>
+          <div class="strip__saved" [style.width.%]="st.savedPct"></div>
+        </div>
+        <p class="strip__caption">
+          @if (st.overspent > 0) {
+            Gastaste {{ st.overspent | cop }} más de lo que entró.
+          } @else {
+            Ahorraste el {{ s.savingsRate | number: '1.0-1' }}% de tus ingresos@if (topCategory(); as top) {, y lo que más pesó fue <strong>{{ top.name }}</strong> ({{ top.percentage | number: '1.0-1' }}% del gasto)}.
+          }
+        </p>
+      }
+    }
+  </section>
+}
+
+<div class="grid-2">
+  <section class="panel" aria-labelledby="year-title">
+    <header class="panel__head">
+      <h2 id="year-title">Así va {{ period().year }}</h2>
+      <span class="legend"><i class="dot dot--pos"></i>Ingresos <i class="dot dot--neg"></i>Gastos</span>
+    </header>
+    @if (monthly().length) {
+      <app-monthly-chart [points]="monthly()" [highlight]="period().month" />
+    }
+  </section>
+
+  <section class="panel" aria-labelledby="cat-title">
+    <header class="panel__head">
+      <h2 id="cat-title">En qué se fue</h2>
+    </header>
+    @if (breakdown().length === 0) {
+      <p class="muted">Sin gastos registrados en {{ label() }}.</p>
+    } @else {
+      <ul class="bars">
+        @for (b of breakdown(); track b.categoryId) {
+          <li>
+            <div class="bars__row">
+              <span><i class="swatch" [style.background]="b.color"></i>{{ b.name }}</span>
+              <span class="num">{{ b.total | cop }}</span>
+            </div>
+            <div class="bars__track">
+              <div class="bars__fill" [style.width.%]="(b.total / maxCategory()) * 100" [style.background]="b.color"></div>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>
+
+<div class="grid-2">
+  <section class="panel" aria-labelledby="budget-title">
+    <header class="panel__head">
+      <h2 id="budget-title">Presupuestos</h2>
+      <a routerLink="/presupuestos">Administrar</a>
+    </header>
+    @if (budgets().length === 0) {
+      <p class="muted">No tienes presupuestos para este mes. <a routerLink="/presupuestos">Define un límite</a> para una categoría y te avisamos al llegar al 80 %.</p>
+    } @else {
+      <ul class="budget-list">
+        @for (b of budgets(); track b.id) {
+          <li [attr.data-status]="b.status">
+            <div class="bars__row">
+              <span>{{ b.category.name }}</span>
+              <span class="num">{{ b.spent | cop }} <span class="muted">de {{ b.limit | cop }}</span></span>
+            </div>
+            <div class="meter"><div class="meter__fill" [style.width.%]="b.percentUsed > 100 ? 100 : b.percentUsed"></div></div>
+            @if (b.status === 'EXCEEDED') {
+              <small class="neg">Te pasaste por {{ -b.remaining | cop }}</small>
+            } @else if (b.status === 'WARNING') {
+              <small class="warn">Quedan {{ b.remaining | cop }}</small>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <section class="panel" aria-labelledby="recent-title">
+    <header class="panel__head">
+      <h2 id="recent-title">Últimos movimientos</h2>
+      <a routerLink="/movimientos">Ver todos</a>
+    </header>
+    @if (recent().length === 0) {
+      <p class="muted">Aún no hay movimientos en {{ label() }}.</p>
+    } @else {
+      <ul class="tx-list">
+        @for (t of recent(); track t.id) {
+          <li>
+            <i class="swatch" [style.background]="t.category.color"></i>
+            <div class="tx-list__main">
+              <span>{{ t.description || t.category.name }}</span>
+              <small class="muted">{{ t.category.name }}, {{ t.date | date: 'd MMM' }}</small>
+            </div>
+            <span class="num" [class.pos]="t.category.type === 'INCOME'" [class.neg]="t.category.type === 'EXPENSE'">
+              {{ t.category.type === 'INCOME' ? '+' : '−' }} {{ t.amount | cop }}
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>
+
+@if (formOpen()) {
+  <app-transaction-form [categories]="categories()" (saved)="onSaved()" (closed)="formOpen.set(false)" />
+}

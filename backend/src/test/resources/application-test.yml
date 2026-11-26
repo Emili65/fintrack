@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:fintrack;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+app:
+  jwt:
+    secret: dGVzdC1zZWNyZXQta2V5LWZvci1maW50cmFjay1pbnRlZ3JhdGlvbi10ZXN0cy0xMjM0NTY=
+    expiration-minutes: 60
+  seed-demo: false
