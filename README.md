@@ -157,6 +157,6 @@ La documentación interactiva completa está en Swagger UI.
 ## Autora
 
 **Emili García Bermúdez**, estudiante de Ingeniería de Sistemas de la Universidad del Quindío.
-[LinkedIn](https://www.linkedin.com/in/TU_PERFIL) · [GitHub](https://github.com/TU_USUARIO)
+[LinkedIn](https://www.linkedin.com/in/emili-garcia-48a6b0374/) · [GitHub](https://github.com/Emili65)
 
 Licencia MIT.
